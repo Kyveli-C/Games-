@@ -1,4 +1,4 @@
-
+//Kyveli Christofoou G21305022
 // Assesment1.cpp: A program using the TL-Engine
 
 #include <TL-Engine.h>	// TL-Engine include file and namespace
@@ -497,6 +497,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 	// Delete the 3D engine now we are finished with it
 	myEngine->Delete();
 }
+
 
 
 

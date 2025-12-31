@@ -1,4 +1,5 @@
-
+//Kyveli Christoforou
+// G21305022//
 // Assesment1.cpp: A program using the TL-Engine
 
 #include <TL-Engine.h>	// TL-Engine include file and namespace
@@ -10,6 +11,24 @@
 using namespace tle;
 using namespace std;
 
+void cameraBehaviour(I3DEngine* myEngine, ICamera* mycamera)
+{
+
+	if (myEngine->KeyHeld(Key_2))
+	{
+		mycamera->ResetOrientation();
+		mycamera->SetPosition(150, 150, -150);
+		mycamera->RotateX(45);
+		mycamera->RotateY(-45);
+	}
+
+	if (myEngine->KeyHeld(Key_1))
+	{
+		mycamera->ResetOrientation();
+		mycamera->SetPosition(0, 200, 0);
+		mycamera->RotateX(90);
+	}
+}
 
 bool sphereToBox(IModel* sphere, IModel* cube, float radius, int side)
 {
@@ -36,7 +55,6 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 	float distance = sqrt((dx * dx) + (dy * dy) + (dz * dz));
 
-	float distanceBetween = radius + (side / 2);
 	if (distance <= 50) {
 		return true;
 	}
@@ -53,7 +71,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 		float distanceApart = sqrt((dx * dx) + (dy * dy) + (dz * dz));
 
-	if (distanceApart <10) {
+	if (distanceApart <=10) {
 
 			return true;
 		}
@@ -98,6 +116,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 	}
 
 
+
 	void main()
 	{
 		// Create a 3D engine (using TLX engine here) and open a window for it
@@ -106,6 +125,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 		// Add default folder for meshes and other media
 		myEngine->AddMediaFolder(".\\Media");
+		myEngine->AddMediaFolder("C:\\ProgramData\\TL-Engine\\Media");
 
 
 		/**** Set up your scene here ****/
@@ -115,8 +135,13 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 		enum gameStates { paused, gameOver, playing, gameWon };
 		gameStates state = playing;
 
-		enum camera { manual, isometric };
-		camera activeCamera = manual;
+		enum ECameraState 
+		{ 
+			manual, 
+			isometric 
+		};
+
+		ECameraState activeCamera = manual;
 
 		//camera 
 		ICamera* mycamera = myEngine->CreateCamera(kManual);
@@ -136,7 +161,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 		//sphere
 		IMesh* sphere = myEngine->LoadMesh("spheremesh.x");
-		IModel* modelSphere = sphere->CreateModel(0, 5, 0);
+		IModel* modelSphere = sphere->CreateModel(0, 10, 0);
 
 
 		float kSphereSpeed = 50.0f;
@@ -145,6 +170,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 		bool isSphereLarger = false;
 		bool isEnemySphereLarger = false;
+		bool movingEnemy = true;
 
 
 		//sky
@@ -175,32 +201,44 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 		float skinChangeTimer = 0.0f; //timer
 		bool skinActive = false;
+		bool skinEnemyActive = false;
 
 		//enemy sphere
 		IMesh* enemySphere = myEngine->LoadMesh("spheremesh.x");
 		float positX2 = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0f; //values -80 to 80
 		float positZ2 = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0;
-		IModel* modelEnemySphere = sphere->CreateModel(positX2, positY, positZ2);
+		IModel* modelEnemySphere = sphere->CreateModel(positX2, 10, positZ2);
 		modelEnemySphere->SetSkin("enemysphere.jpg");
 
-		float kEnemySpeed = 1.0f;
+		
 		float kEnemyRotationSpeed = 100.0f;
+		
+
+		float movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+		float movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+
+		//dummy
+	    IMesh* dummyMesh = myEngine->LoadMesh("Dummy.x");
+		IModel* dummyUp = dummyMesh->CreateModel(0, 0, 85);
+		IModel* dummyDown = dummyMesh->CreateModel(0, 0, -85);
+		IModel* dummyLeft = dummyMesh->CreateModel(-85, 0, 0);
+	    IModel* dummyRight = dummyMesh->CreateModel(85, 0, 0);
+
+	
 
 		//messages to be displayed
 		IFont* pointsDisplay = myEngine->LoadFont("Arial", 50); //score
 		IFont* winGame = myEngine->LoadFont("Arial", 72); //win
 		IFont* endGame = myEngine->LoadFont("Arial", 72); //loose
-		IFont* enemyScore = myEngine->LoadFont("Arial", 50); //loose
+		IFont* enemyScore = myEngine->LoadFont("Arial", 50); 
+		IFont* pause = myEngine->LoadFont("Arial", 50);
+
 
 		int playerPoints = 0;
 
-		int enemyPoints =0;
-	
-	    float movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
-		float movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+		int enemyPoints = 0;
 
-
-
+		
 
 
 		// The main game loop, repeat until engine is stopped
@@ -212,6 +250,8 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			float dT = myEngine->Timer();
 
 
+			
+
 			/**** Update your scene each frame here ****/
 
 			//*********************************************************
@@ -219,34 +259,33 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			//*********************************************************
 
 
-			if (state == playing) {
+			if (state == playing) 
+			{
 
 				//camera rotation
 				if (activeCamera == manual)
-					if (myEngine->KeyHeld(Key_Up)) {
-						mycamera->MoveZ(kCameraRotation);
+				{
+					if (myEngine->KeyHeld(Key_Up)) 
+                    {
+		              mycamera->MoveZ(kCameraRotation);
 					}
-				if (myEngine->KeyHeld(Key_Down)) {
-					mycamera->MoveZ(-kCameraRotation);
+					if (myEngine->KeyHeld(Key_Down)) 
+					{
+						mycamera->MoveZ(-kCameraRotation);
+					}
+					if (myEngine->KeyHeld(Key_Left)) {
+						mycamera->MoveX(-kCameraRotation);
+					}
+					if (myEngine->KeyHeld(Key_Right)) {
+						mycamera->MoveX(kCameraRotation);
+					}
 				}
-				if (myEngine->KeyHeld(Key_Left)) {
-					mycamera->MoveX(-kCameraRotation);
-				}
-				if (myEngine->KeyHeld(Key_Right)) {
-					mycamera->MoveX(kCameraRotation);
-				}
-			}
 
 			//change camera
-			if (activeCamera == manual) {
-				if (myEngine->KeyHeld(Key_2)) {
-					ICamera* isoCamera = myEngine->CreateCamera();
-					isoCamera->SetPosition(150, 150, -150);
-					isoCamera->RotateY(-45);
-					isoCamera->RotateX(45);
+				cameraBehaviour(myEngine, mycamera);
+			
 
-				}
-			}
+			
 
 
 			//move sphere
@@ -266,17 +305,17 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			//increase ball size
 			if (playerPoints == 40 && !isSphereLarger) {
 				modelSphere->Scale(1.2);//change the sphere size when game is won
-				modelSphere->SetLocalY(10); // must change position so it's above the set
+				modelSphere->SetLocalY(15); // must change position so it's above the set
 				isSphereLarger = true;
 			}
 			if (playerPoints == 80 && isSphereLarger) {
 				modelSphere->Scale(1.2);
-				modelSphere->SetLocalY(15);
+				modelSphere->SetLocalY(20);
 				isSphereLarger = false;
 			}
 			if (playerPoints == 120 && !isSphereLarger) {
 				modelSphere->Scale(1.2);
-				modelSphere->SetLocalY(20);
+				modelSphere->SetLocalY(25);
 				isSphereLarger = true;
 			}
 
@@ -312,7 +351,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			}
 
 
-			//collision of cubes with special cubes-draw in another position
+			//collision of cubes with special cube-draw in another position
 			for (int i = 0; i < kcubes; i++) {
 				for (int j = i + 1; j < kcubes; j++) {
 					if (cubeToCube(cubes[i], specialCubeModel, kCubeSide))
@@ -378,20 +417,29 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 				specialCubeModel->SetPosition(1000, 1000, 1000);
 				skinChangeTimer = 0.0f;
 			}
-
+			
 			if (skinActive) {
 				skinChangeTimer += dT;
 				cout << skinChangeTimer << endl;
 
 				//sphere attracts cubes
 				for (int i = 0; i < kcubes; i++) {
-					if (magnet(modelSphere, cubes[i], kSphereRadius, kCubeSide)) {
-						float xofsphere = modelSphere->GetLocalX();
-						float zofsphere = modelSphere->GetLocalZ();
-						float yofsphere = 5.0f;
-						cubes[i]->MoveX(xofsphere);
-						cubes[i]->MoveY(yofsphere);
-						cubes[i]->MoveZ(zofsphere);
+					if (magnet(modelSphere, cubes[i], kSphereRadius, kCubeSide)) // if distance is <=50
+					{
+						//vectors
+						float dx = modelSphere->GetLocalX() - cubes[i]->GetLocalX();
+						float dy = modelSphere->GetLocalY() - cubes[i]->GetLocalY();
+						float dz = modelSphere->GetLocalZ() - cubes[i]->GetLocalZ();
+
+						float distance = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+
+						float x = dx / distance;
+						float y = dy / distance;
+						float z = dz / distance;
+						
+						cubes[i]->MoveX(x);
+						cubes[i]->MoveY(y);
+						cubes[i]->MoveZ(z);
 					}
 				}
 
@@ -403,16 +451,54 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 				}
 			}
 
+			//same for enemy
+			if (!skinEnemyActive && sphereToBox(modelEnemySphere, specialCubeModel, kSphereRadius, kCubeSide)) //if collision
+			{
+				skinEnemyActive = true;
+				modelEnemySphere->SetSkin("hypersphere.jpg");
+				specialCubeModel->SetPosition(1000, 1000, 1000);
+				skinChangeTimer = 0.0f;
+			}
+			if (skinEnemyActive)
+				{
+				skinChangeTimer += dT;
+				cout << skinChangeTimer << endl;
+
+				// enemy sphere attracts cubes
+
+					for (int i = 0; i < kcubes; i++) 
+					{
+						if (magnet(modelEnemySphere, cubes[i], kSphereRadius, kCubeSide)) // if distance is <=50
+							{
+							//vectors
+							float dx = modelEnemySphere->GetLocalX() - cubes[i]->GetLocalX();
+							float dy = modelEnemySphere->GetLocalY() - cubes[i]->GetLocalY();
+							float dz = modelEnemySphere->GetLocalZ() - cubes[i]->GetLocalZ();
+
+							float distance = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+
+							float x = dx / distance;
+							float y = dy / distance;
+							float z = dz / distance;
+
+							cubes[i]->MoveX(x);
+							cubes[i]->MoveY(y);
+							cubes[i]->MoveZ(z);
+						}
+					}
+
+					if (skinChangeTimer >= 5.0f)
+						{
+						skinActive = false;
+						modelEnemySphere->SetSkin("enemysphere.jpg");
+						}
+					}
+
 			//enemy moves
-
-			bool movingEnemy = true;
-
 
 			modelEnemySphere->MoveLocalZ(kSphereSpeed * dT);
 
-
 			modelEnemySphere->MoveLocalZ(-kSphereSpeed * dT);
-
 
 			modelEnemySphere->RotateLocalY(kRotationSpeed * dT);
 
@@ -440,7 +526,30 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
 					movementNPCZ = -movementNPCZ;
 				}
-			}
+			
+				
+				//rotate the enemy
+
+
+
+				if (modelEnemySphere->GetZ() > 0)
+					{
+					modelEnemySphere->LookAt(dummyUp);
+					}
+				if (modelEnemySphere->GetZ() < 0)
+				 {
+					modelEnemySphere->LookAt(dummyDown);
+				}
+				if (modelEnemySphere->GetX() > 0)
+				{
+					modelEnemySphere->LookAt(dummyLeft);
+				}
+				if (modelEnemySphere->GetX() < 0)
+				{
+					modelEnemySphere->LookAt(dummyRight);
+				}
+				}
+			
 
 			// bounce spheres
 
@@ -448,8 +557,33 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			{
 				if (abs(playerPoints - enemyPoints) <= 40)
 				{
-					modelSphere->MoveX(5);
-				}
+					float sphereX=modelSphere->GetX();
+					float sphereZ = modelSphere->GetZ();
+					float enemyX = modelEnemySphere->GetX();
+					float enemyZ = modelEnemySphere->GetZ();
+
+					if (sphereX > enemyX) 
+						{
+						modelSphere->MoveX(10);
+						modelEnemySphere->MoveX(-10);
+						}
+					if (sphereX < enemyX)
+						{
+						modelSphere->MoveX(-10);
+						modelEnemySphere->MoveX(10);
+						}
+					if (sphereZ > enemyZ) 
+						{
+						modelSphere->MoveZ(10);
+						modelEnemySphere->MoveZ(-10);
+						}
+	
+					if (sphereZ > enemyZ) 
+						{
+					modelSphere->MoveZ(10);
+					modelEnemySphere->MoveZ(-10);
+						}
+					}
 				else if (playerPoints > enemyPoints)
 				{
 					playerPoints += 40;
@@ -493,24 +627,22 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			{
 				state = gameOver;
 			}
-			//exit game
-			if (myEngine->KeyHit(Key_Escape))
-			{
-				myEngine->Stop();
-			}
-
+			
+		}
 
 			//*********************************************************
-			//					GANE WON STATE
+			//					GAME WON STATE
 			//*********************************************************
 
 			//win the game
-			if (state == gameWon) {
-				string win = "You won!";
+			if (state == gameWon)
+			{
+				string win = "Congratulations! You won!";
 				winGame->Draw(win, 640, 320, kBlue, kCentre, kVCentre);
-				state = paused;
+				movingEnemy = true;	
 			}
 
+			
 
 			//*********************************************************
 			//					GAME OVER STATE
@@ -519,23 +651,67 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			{
 				string end = "Game Over!";
 				endGame->Draw(end, 640, 320, kMagenta, kCentre, kVCentre);
-				state = paused;
+				bool movingEnemy = true;
 			}
+		
+
+		//*********************************************************
+		//					PAUSED STATE
+		//*********************************************************
+		if (state == paused)
+		{
+		  if (myEngine->KeyHit(Key_P))
+			{
+				state = playing;
+			}
+		  string pauseMessage = " Game Paused!";
+		  pause->Draw(pauseMessage, 640, 320, kBlue, kCentre, kVCentre);
 		}
 
-			//*********************************************************
-			//					PAUSED STATE
-			//*********************************************************
-			if (state == paused)
-			{
+		if (state != paused)
+		{
+			modelEnemySphere->MoveLocalZ(kSphereSpeed * dT);
 
-				if (myEngine->KeyHit(Key_P))
-				{
-					state = playing;
+			modelEnemySphere->MoveLocalZ(-kSphereSpeed * dT);
+
+			modelEnemySphere->RotateLocalY(kRotationSpeed * dT);
+
+			modelEnemySphere->RotateLocalY(-kRotationSpeed * dT);
+
+
+
+			if (movingEnemy) {
+				modelEnemySphere->MoveX(movementNPC);
+				modelEnemySphere->MoveZ(movementNPCZ);
+
+				if (modelEnemySphere->GetLocalX() >= 80) {
+					movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					movementNPC = -movementNPC;
 				}
-			  }
-
+				if (modelEnemySphere->GetLocalX() <= -80) {
+					movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					movementNPC = movementNPC;
+				}
+				if (modelEnemySphere->GetLocalZ() <= -80) {
+					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					movementNPCZ = movementNPCZ;
+				}
+				if (modelEnemySphere->GetLocalZ() >= 80) {
+					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					movementNPCZ = -movementNPCZ;
+				}
+			}
+		}
+			
 		
+
+		//exit game
+		if (myEngine->KeyHit(Key_Escape))
+		{
+			myEngine->Stop();
+		}
+
+	}
 	
 	// Delete the 3D engine now we are finished with it
 	myEngine->Delete();

@@ -168,9 +168,10 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 		float kRotationSpeed = 100.0f;
 		float kSphereRadius = 10.0f;
 
+		
+		bool movingEnemy = true;
 		bool isSphereLarger = false;
 		bool isEnemySphereLarger = false;
-		bool movingEnemy = true;
 
 
 		//sky
@@ -192,6 +193,8 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			cubes[i] = cube->CreateModel(positX, positY, positZ);
 		}
 
+		float cubesSpeed = 0.1f;
+
 		//special cube
 		IMesh* specialCube = myEngine->LoadMesh("minicube.x");
 		float positX = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0f; //values -80 to 80
@@ -207,23 +210,15 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 		IMesh* enemySphere = myEngine->LoadMesh("spheremesh.x");
 		float positX2 = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0f; //values -80 to 80
 		float positZ2 = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0;
-		IModel* modelEnemySphere = sphere->CreateModel(positX2, 10, positZ2);
+		IModel* modelEnemySphere = enemySphere->CreateModel(positX2, 10, positZ2);
 		modelEnemySphere->SetSkin("enemysphere.jpg");
 
 		
-		float kEnemyRotationSpeed = 100.0f;
+		float kEnemyRotationSpeed = 50.0f;
 		
 
-		float movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
-		float movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
-
-		//dummy
-	    IMesh* dummyMesh = myEngine->LoadMesh("Dummy.x");
-		IModel* dummyUp = dummyMesh->CreateModel(0, 0, 85);
-		IModel* dummyDown = dummyMesh->CreateModel(0, 0, -85);
-		IModel* dummyLeft = dummyMesh->CreateModel(-85, 0, 0);
-	    IModel* dummyRight = dummyMesh->CreateModel(85, 0, 0);
-
+		float movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
+		float movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
 	
 
 		//messages to be displayed
@@ -285,61 +280,70 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 				cameraBehaviour(myEngine, mycamera);
 			
 
-			
-
-
 			//move sphere
-			if (myEngine->KeyHeld(Key_W)) {
+			if (myEngine->KeyHeld(Key_W)) 
+				{
 				modelSphere->MoveLocalZ(kSphereSpeed * dT);
-			}
-			if (myEngine->KeyHeld(Key_S)) {
+				}
+			if (myEngine->KeyHeld(Key_S))
+				{
 				modelSphere->MoveLocalZ(-kSphereSpeed * dT);
-			}
-			if (myEngine->KeyHeld(Key_D)) {
+				}
+			if (myEngine->KeyHeld(Key_D))
+				{
 				modelSphere->RotateLocalY(kRotationSpeed * dT);
-			}
-			if (myEngine->KeyHeld(Key_A)) {
+				}
+			if (myEngine->KeyHeld(Key_A)) 
+				{
 				modelSphere->RotateLocalY(-kRotationSpeed * dT);
-			}
+				}
 
 			//increase ball size
-			if (playerPoints == 40 && !isSphereLarger) {
+			if (playerPoints >= 40 && playerPoints<80 && !isSphereLarger)
+				{
 				modelSphere->Scale(1.2);//change the sphere size when game is won
-				modelSphere->SetLocalY(15); // must change position so it's above the set
+				modelSphere->SetLocalY(10); // must change position so it's above the set
 				isSphereLarger = true;
-			}
-			if (playerPoints == 80 && isSphereLarger) {
+				}
+			if (playerPoints>= 80 && playerPoints<120 && isSphereLarger)
+				{
+				modelSphere->Scale(1.2);
+				modelSphere->SetLocalY(15);
+				isSphereLarger = false;
+				}
+			if (playerPoints >= 120 && !isSphereLarger)		
+				{
 				modelSphere->Scale(1.2);
 				modelSphere->SetLocalY(20);
-				isSphereLarger = false;
-			}
-			if (playerPoints == 120 && !isSphereLarger) {
-				modelSphere->Scale(1.2);
-				modelSphere->SetLocalY(25);
 				isSphereLarger = true;
-			}
+				}
 
 			//increase enemy size
-			if (enemyPoints == 40 && !isEnemySphereLarger) {
+			if (enemyPoints >= 40 && enemyPoints<80 && !isEnemySphereLarger)
+				{
 				modelEnemySphere->Scale(1.2);
 				modelEnemySphere->SetLocalY(10);
 				isEnemySphereLarger = true;
-			}
-			if (enemyPoints == 80 && isEnemySphereLarger) {
+				}
+			else if (enemyPoints >= 80 && enemyPoints <120 && isEnemySphereLarger)
+				{
 				modelEnemySphere->Scale(1.2);
 				modelEnemySphere->SetLocalY(15);
 				isEnemySphereLarger = false;
-			}
-			if (enemyPoints == 120 && !isEnemySphereLarger) {
+				}
+			else if (enemyPoints >= 120 && !isEnemySphereLarger)
+				{
 				modelEnemySphere->Scale(1.2);
-				modelEnemySphere->SetLocalY(20);
+				modelEnemySphere->SetLocalY(15);
 				isEnemySphereLarger = true;
-			}
+				}
 
 
 			//collision of two cubes-draw at another position
-			for (int i = 0; i < kcubes; i++) {
-				for (int j = i + 1; j < kcubes; j++) {
+			for (int i = 0; i < kcubes; i++) 
+			{
+				for (int j = i + 1; j < kcubes; j++) 
+				{
 					if (cubeToCube(cubes[i], cubes[j], kCubeSide))
 					{
 						float x = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0f;
@@ -351,21 +355,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			}
 
 
-			//collision of cubes with special cube-draw in another position
-			for (int i = 0; i < kcubes; i++) {
-				for (int j = i + 1; j < kcubes; j++) {
-					if (cubeToCube(cubes[i], specialCubeModel, kCubeSide))
-					{
-						float x = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0f;
-						float z = static_cast<float>(rand()) / RAND_MAX * 160.0f - 80.0f;
-						float y = 5.0f;
-						cubes[i]->SetPosition(x, y, z);
-					}
-				}
-			}
-
-
-			//collision sphere to cubes
+			//collision sphere to cubes-get points
 			for (int i = 0; i < kcubes; i++) {
 				if (sphereToBox(modelSphere, cubes[i], kSphereRadius, kCubeSide)) //if collision
 				{
@@ -409,7 +399,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 				pointsDisplay->Draw(score.c_str(), 1250, 40, kBlue, kRight, kTop);
 			}
 
-			//collision sphere to special cube
+			//collision sphere to special cube-change skin
 			if (!skinActive && sphereToBox(modelSphere, specialCubeModel, kSphereRadius, kCubeSide)) //if collision
 			{
 				skinActive = true;
@@ -424,7 +414,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 				//sphere attracts cubes
 				for (int i = 0; i < kcubes; i++) {
-					if (magnet(modelSphere, cubes[i], kSphereRadius, kCubeSide)) // if distance is <=50
+					if (magnet(modelSphere, cubes[i], kSphereRadius, kCubeSide))
 					{
 						//vectors
 						float dx = modelSphere->GetLocalX() - cubes[i]->GetLocalX();
@@ -466,6 +456,8 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 				// enemy sphere attracts cubes
 
+				
+
 					for (int i = 0; i < kcubes; i++) 
 					{
 						if (magnet(modelEnemySphere, cubes[i], kSphereRadius, kCubeSide)) // if distance is <=50
@@ -481,15 +473,15 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 							float y = dy / distance;
 							float z = dz / distance;
 
-							cubes[i]->MoveX(x);
-							cubes[i]->MoveY(y);
-							cubes[i]->MoveZ(z);
+							cubes[i]->MoveX(x*cubesSpeed);
+							cubes[i]->MoveY(y* cubesSpeed);
+							cubes[i]->MoveZ(z* cubesSpeed);
 						}
 					}
 
 					if (skinChangeTimer >= 5.0f)
 						{
-						skinActive = false;
+						skinEnemyActive = false;
 						modelEnemySphere->SetSkin("enemysphere.jpg");
 						}
 					}
@@ -506,48 +498,49 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 
 
 
-			if (movingEnemy) {
+			if (movingEnemy) 
+				{
 				modelEnemySphere->MoveX(movementNPC);
 				modelEnemySphere->MoveZ(movementNPCZ);
 
-				if (modelEnemySphere->GetLocalX() >= 80) {
-					movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+				if (modelEnemySphere->GetLocalX() >= 80)
+					{
+					movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
 					movementNPC = -movementNPC;
-				}
-				if (modelEnemySphere->GetLocalX() <= -80) {
-					movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					}
+				if (modelEnemySphere->GetLocalX() <= -80) 
+					{
+					movementNPC = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
 					movementNPC = movementNPC;
-				}
-				if (modelEnemySphere->GetLocalZ() <= -80) {
-					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					}
+				if (modelEnemySphere->GetLocalZ() <= -80)
+					{
+					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05;
 					movementNPCZ = movementNPCZ;
-				}
-				if (modelEnemySphere->GetLocalZ() >= 80) {
-					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.5f - 0.1f;
+					}
+				if (modelEnemySphere->GetLocalZ() >= 80)
+				{
+					movementNPCZ = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f * dT;
 					movementNPCZ = -movementNPCZ;
 				}
-			
-				
-				//rotate the enemy
 
-
-
-				if (modelEnemySphere->GetZ() > 0)
-					{
-					modelEnemySphere->LookAt(dummyUp);
-					}
-				if (modelEnemySphere->GetZ() < 0)
-				 {
-					modelEnemySphere->LookAt(dummyDown);
-				}
-				if (modelEnemySphere->GetX() > 0)
+				if (modelEnemySphere->GetZ() > 0 && modelEnemySphere->GetX() > 0)
 				{
-					modelEnemySphere->LookAt(dummyLeft);
+					modelEnemySphere->RotateLocalY(0.1);
 				}
-				if (modelEnemySphere->GetX() < 0)
+				if (modelEnemySphere->GetZ() < 0 && modelEnemySphere->GetX() > 0)
 				{
-					modelEnemySphere->LookAt(dummyRight);
+					modelEnemySphere->RotateLocalY(0.1);
 				}
+				if (modelEnemySphere->GetZ() > 0 && modelEnemySphere->GetX() > 0)
+				{
+					modelEnemySphere->RotateLocalY(-0.1);
+				}
+				if (modelEnemySphere->GetZ() < 0 && modelEnemySphere->GetX() < 0)
+				{
+					modelEnemySphere-> RotateLocalY(-0.1);
+				}
+	
 				}
 			
 
@@ -651,7 +644,7 @@ bool magnet(IModel* sphere, IModel* cube, float radius, int side) {
 			{
 				string end = "Game Over!";
 				endGame->Draw(end, 640, 320, kMagenta, kCentre, kVCentre);
-				bool movingEnemy = true;
+				movingEnemy = true;
 			}
 		
 
